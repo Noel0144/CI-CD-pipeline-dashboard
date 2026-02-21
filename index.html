@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CI/CD Pipeline Dashboard</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+
+  <!-- Our stylesheet -->
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     SIDEBAR — navigation panel on the left
+═══════════════════════════════════════════ -->
+<nav class="sidebar">
+
+  <!-- Logo / App Name -->
+  <div class="logo">
+    <div class="logo-title">⚡ PipelineHQ</div>
+    <div class="logo-sub">CI/CD DASHBOARD v1.0</div>
+  </div>
+
+  <!-- Overview section -->
+  <div class="nav-label">Overview</div>
+  <div class="nav-item active" onclick="showPage('overview', this)">
+    <span class="nav-icon">◈</span> Dashboard
+  </div>
+
+  <!-- Pipeline stage links -->
+  <div class="nav-label">Pipeline Stages</div>
+
+  <div class="nav-item" onclick="showPage('source', this)">
+    <span class="nav-icon">⌥</span> Source
+    <span class="stage-badge badge-pass" id="badge-source">OK</span>
+  </div>
+
+  <div class="nav-item" onclick="showPage('build', this)">
+    <span class="nav-icon">⚙</span> Build
+    <span class="stage-badge badge-run" id="badge-build">RUN</span>
+  </div>
+
+  <div class="nav-item" onclick="showPage('test', this)">
+    <span class="nav-icon">✓</span> Test
+    <span class="stage-badge badge-warn" id="badge-test">WARN</span>
+  </div>
+
+  <div class="nav-item" onclick="showPage('security', this)">
+    <span class="nav-icon">⛨</span> Security
+    <span class="stage-badge badge-pass" id="badge-security">OK</span>
+  </div>
+
+  <div class="nav-item" onclick="showPage('deploy', this)">
+    <span class="nav-icon">▲</span> Deploy
+    <span class="stage-badge badge-pass" id="badge-deploy">OK</span>
+  </div>
+
+  <!-- Footer: connection status -->
+  <div class="sidebar-footer">
+    <div><span class="dot-live"></span>Connected to GitHub</div>
+    <div style="margin-top:4px">repo: myorg/myapp</div>
+  </div>
+
+</nav><!-- end .sidebar -->
+
+
+<!-- ═══════════════════════════════════════════
+     MAIN CONTENT — pages swap in/out here
+═══════════════════════════════════════════ -->
+<div class="main">
+
+
+  <!-- ══════════════════════════════
+       PAGE: OVERVIEW / DASHBOARD
+  ══════════════════════════════ -->
+  <div class="page active" id="page-overview">
+
+    <div class="page-header">
+      <div>
+        <div class="page-title">Pipeline Overview</div>
+        <div class="page-subtitle">All recent workflow runs · github.com/myorg/myapp</div>
+      </div>
+      <button class="refresh-btn" onclick="onRefreshClick()">⟳ Refresh</button>
+    </div>
+
+    <!-- Summary stat cards -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Runs</div>
+        <div class="stat-value">142</div>
+        <div class="stat-change up">↑ 12 this week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pass Rate</div>
+        <div class="stat-value up">87%</div>
+        <div class="stat-change up">↑ 3% vs last week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Duration</div>
+        <div class="stat-value">4m 32s</div>
+        <div class="stat-change down">↑ 18s slower</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Runs</div>
+        <div class="stat-value warn">2</div>
+        <div class="stat-change">in progress</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Failed Today</div>
+        <div class="stat-value down">3</div>
+        <div class="stat-change down">↑ 1 vs yesterday</div>
+      </div>
+    </div>
+
+    <!-- Visual pipeline flow diagram -->
+    <div class="section-title">Current Pipeline — #run-142</div>
+    <div class="pipeline-flow">
+
+      <div class="flow-stage" onclick="showPage('source', document.querySelector('[onclick*=source]'))">
+        <div class="flow-icon pass">⌥</div>
+        <div class="flow-name">SOURCE<br/><span style="color:var(--green)">Passed</span></div>
+      </div>
+      <div class="flow-arrow">›</div>
+
+      <div class="flow-stage" onclick="showPage('build', document.querySelector('[onclick*=build]'))">
+        <div class="flow-icon run">⚙</div>
+        <div class="flow-name">BUILD<br/><span style="color:var(--accent)">Running</span></div>
+      </div>
+      <div class="flow-arrow">›</div>
+
+      <div class="flow-stage" onclick="showPage('test', document.querySelector('[onclick*=test]'))">
+        <div class="flow-icon warn">✓</div>
+        <div class="flow-name">TEST<br/><span style="color:var(--yellow)">Queued</span></div>
+      </div>
+      <div class="flow-arrow">›</div>
+
+      <div class="flow-stage" onclick="showPage('security', document.querySelector('[onclick*=security]'))">
+        <div class="flow-icon pass">⛨</div>
+        <div class="flow-name">SECURITY<br/><span style="color:var(--muted)">Pending</span></div>
+      </div>
+      <div class="flow-arrow">›</div>
+
+      <div class="flow-stage" onclick="showPage('deploy', document.querySelector('[onclick*=deploy]'))">
+        <div class="flow-icon pass">▲</div>
+        <div class="flow-name">DEPLOY<br/><span style="color:var(--muted)">Pending</span></div>
+      </div>
+
+    </div><!-- end .pipeline-flow -->
+
+    <!-- Recent runs table — rows injected by script.js -->
+    <div class="section-title">Recent Workflow Runs</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Run #</th>
+            <th>Branch</th>
+            <th>Commit</th>
+            <th>Triggered By</th>
+            <th>Status</th>
+            <th>Duration</th>
+            <th>Started</th>
+          </tr>
+        </thead>
+        <tbody id="runs-table">
+          <!-- Populated by renderRuns() in script.js -->
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- end #page-overview -->
+
+
+  <!-- ══════════════════════════════
+       PAGE: SOURCE STAGE
+  ══════════════════════════════ -->
+  <div class="page" id="page-source">
+
+    <div class="page-header">
+      <div>
+        <div class="page-title">⌥ Source Stage</div>
+        <div class="page-subtitle">Code checkout · Branch validation · PR checks</div>
+      </div>
+      <span class="pill pass"><span class="pill-dot"></span>PASSED</span>
+    </div>
+
+    <!-- Quick stat cards -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Branch</div>
+        <div class="stat-value" style="font-size:18px;font-family:var(--font-mono)">feature/auth</div>
+        <div class="stat-change">from main</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Commit</div>
+        <div class="stat-value" style="font-size:18px;font-family:var(--font-mono)">a3f9c12</div>
+        <div class="stat-change">2 min ago</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Files Changed</div>
+        <div class="stat-value">14</div>
+        <div class="stat-change up">+312 / -87 lines</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">PR Status</div>
+        <div class="stat-value" style="font-size:18px">✓ Open</div>
+        <div class="stat-change">2 reviewers</div>
+      </div>
+    </div>
+
+    <!-- Commit details + PR review side by side -->
+    <div class="two-col">
+      <div class="info-card">
+        <div class="info-card-title">Commit Details</div>
+        <div class="kv-row"><span class="kv-key">Author</span>       <span class="kv-val">Rahul Sharma</span></div>
+        <div class="kv-row"><span class="kv-key">Message</span>      <span class="kv-val">feat: add JWT auth middleware</span></div>
+        <div class="kv-row"><span class="kv-key">SHA</span>           <span class="kv-val">a3f9c12b8e4d</span></div>
+        <div class="kv-row"><span class="kv-key">Timestamp</span>    <span class="kv-val">2025-03-10 14:32 UTC</span></div>
+        <div class="kv-row"><span class="kv-key">Base Branch</span>  <span class="kv-val">main @ f1e2a09</span></div>
+        <div class="kv-row"><span class="kv-key">Checkout Time</span><span class="kv-val">3.2s</span></div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">PR #47 — Review Status</div>
+        <div class="kv-row"><span class="kv-key">Title</span>      <span class="kv-val">Add JWT Authentication</span></div>
+        <div class="kv-row"><span class="kv-key">Priya Nair</span> <span class="kv-val up">✓ Approved</span></div>
+        <div class="kv-row"><span class="kv-key">Arjun Das</span>  <span class="kv-val warn">⏳ Pending</span></div>
+        <div class="kv-row"><span class="kv-key">CI Check</span>   <span class="kv-val up">Passed</span></div>
+        <div class="kv-row"><span class="kv-key">Lint Check</span> <span class="kv-val up">Passed</span></div>
+        <div class="kv-row"><span class="kv-key">Mergeable</span>  <span class="kv-val up">Yes</span></div>
+      </div>
+    </div>
+
+    <!-- Files changed in this commit -->
+    <div class="section-title">Changed Files</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>File</th><th>Status</th><th>Additions</th><th>Deletions</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-main">src/middleware/auth.js</td>
+            <td><span class="pill pass"><span class="pill-dot"></span>ADDED</span></td>
+            <td class="up">+145</td><td>-0</td>
+          </tr>
+          <tr>
+            <td class="td-main">src/routes/user.js</td>
+            <td><span class="pill warn"><span class="pill-dot"></span>MODIFIED</span></td>
+            <td class="up">+42</td><td class="down">-18</td>
+          </tr>
+          <tr>
+            <td class="td-main">tests/auth.test.js</td>
+            <td><span class="pill pass"><span class="pill-dot"></span>ADDED</span></td>
+            <td class="up">+98</td><td>-0</td>
+          </tr>
+          <tr>
+            <td class="td-main">package.json</td>
+            <td><span class="pill warn"><span class="pill-dot"></span>MODIFIED</span></td>
+            <td class="up">+3</td><td class="down">-1</td>
+          </tr>
+          <tr>
+            <td class="td-main">README.md</td>
+            <td><span class="pill warn"><span class="pill-dot"></span>MODIFIED</span></td>
+            <td class="up">+24</td><td class="down">-6</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- end #page-source -->
+
+
+  <!-- ══════════════════════════════
+       PAGE: BUILD STAGE
+  ══════════════════════════════ -->
+  <div class="page" id="page-build">
+
+    <div class="page-header">
+      <div>
+        <div class="page-title">⚙ Build Stage</div>
+        <div class="page-subtitle">Dependency install · Compile · Package artifacts</div>
+      </div>
+      <span class="pill run"><span class="pill-dot"></span>RUNNING</span>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Build #</div>
+        <div class="stat-value" style="font-size:20px;font-family:var(--font-mono)">#142</div>
+        <div class="stat-change">Node 20 · Ubuntu</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Duration</div>
+        <div class="stat-value warn">1m 48s</div>
+        <div class="stat-change">still running...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Dependencies</div>
+        <div class="stat-value">312</div>
+        <div class="stat-change up">0 vulnerabilities</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Bundle Size</div>
+        <div class="stat-value">2.1 MB</div>
+        <div class="stat-change up">↓ 4% smaller</div>
+      </div>
+    </div>
+
+    <!-- Step-by-step progress -->
+    <div class="section-title">Build Steps</div>
+    <div class="table-wrap" style="padding:18px">
+
+      <div class="progress-row">
+        <span class="progress-label">Setup Node.js</span>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" style="width:100%;background:var(--green)"></div>
+        </div>
+        <span class="progress-pct up">Done</span>
+      </div>
+
+      <div class="progress-row">
+        <span class="progress-label">npm ci (install)</span>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" style="width:100%;background:var(--green)"></div>
+        </div>
+        <span class="progress-pct up">Done</span>
+      </div>
+
+      <!-- This bar is animated by script.js -->
+      <div class="progress-row">
+        <span class="progress-label">npm run build</span>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" style="width:72%;background:var(--accent)" id="build-bar"></div>
+        </div>
+        <span class="progress-pct warn" id="build-pct">72%</span>
+      </div>
+
+      <div class="progress-row">
+        <span class="progress-label">Generate artifacts</span>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" style="width:0%"></div>
+        </div>
+        <span class="progress-pct">0%</span>
+      </div>
+
+      <div class="progress-row">
+        <span class="progress-label">Upload to registry</span>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" style="width:0%"></div>
+        </div>
+        <span class="progress-pct">0%</span>
+      </div>
+
+    </div><!-- end build steps card -->
+
+    <!-- Terminal-style build log -->
+    <div class="section-title">Live Build Log</div>
+    <div class="log-block" id="build-log">
+      <div><span class="log-time">14:33:01</span><span class="log-ok">✓</span> Set up Node.js 20.x</div>
+      <div><span class="log-time">14:33:04</span><span class="log-info">ℹ</span> Running npm ci...</div>
+      <div><span class="log-time">14:33:18</span><span class="log-ok">✓</span> Added 312 packages in 14s</div>
+      <div><span class="log-time">14:33:19</span><span class="log-info">ℹ</span> Running npm run build...</div>
+      <div><span class="log-time">14:33:22</span><span class="log-info">ℹ</span> webpack 5.88.0 building...</div>
+      <div><span class="log-time">14:33:29</span><span class="log-info">ℹ</span> Compiling src/index.js...</div>
+      <div><span class="log-time">14:33:35</span><span class="log-info">ℹ</span> Compiling src/middleware/auth.js...</div>
+      <div><span class="log-time">14:33:41</span><span class="log-warn">⚠</span> Circular dependency: utils/helpers → services/api</div>
+      <div><span class="log-time">14:33:47</span><span class="log-info">▶</span> Build still running... (72% complete)</div>
+    </div>
+
+    <div class="two-col">
+      <div class="info-card">
+        <div class="info-card-title">Environment</div>
+        <div class="kv-row"><span class="kv-key">Runner OS</span>    <span class="kv-val">Ubuntu 22.04</span></div>
+        <div class="kv-row"><span class="kv-key">Node Version</span> <span class="kv-val">20.11.0</span></div>
+        <div class="kv-row"><span class="kv-key">npm Version</span>  <span class="kv-val">10.2.4</span></div>
+        <div class="kv-row"><span class="kv-key">Cache Hit</span>    <span class="kv-val up">Yes (node_modules)</span></div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">Previous Build Durations</div>
+        <div class="kv-row"><span class="kv-key">Run #141</span>  <span class="kv-val">1m 52s</span></div>
+        <div class="kv-row"><span class="kv-key">Run #140</span>  <span class="kv-val">1m 44s</span></div>
+        <div class="kv-row"><span class="kv-key">Run #139</span>  <span class="kv-val">2m 01s</span></div>
+        <div class="kv-row"><span class="kv-key">7-day Avg</span> <span class="kv-val">1m 49s</span></div>
+      </div>
+    </div>
+
+  </div><!-- end #page-build -->
+
+
+  <!-- ══════════════════════════════
+       PAGE: TEST STAGE
+  ══════════════════════════════ -->
+  <div class="page" id="page-test">
+
+    <div class="page-header">
+      <div>
+        <div class="page-title">✓ Test Stage</div>
+        <div class="page-subtitle">Unit tests · Integration tests · Coverage report</div>
+      </div>
+      <span class="pill warn"><span class="pill-dot"></span>2 FAILING</span>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Tests</div>
+        <div class="stat-value">248</div>
+        <div class="stat-change">across 12 suites</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Passed</div>
+        <div class="stat-value up">246</div>
+        <div class="stat-change up">99.2% pass rate</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Failed</div>
+        <div class="stat-value down">2</div>
+        <div class="stat-change down">need attention</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Coverage</div>
+        <div class="stat-value warn">74%</div>
+        <div class="stat-change warn">target: 80%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Duration</div>
+        <div class="stat-value">1m 12s</div>
+        <div class="stat-change">jest · parallel</div>
+      </div>
+    </div>
+
+    <!-- Code coverage bars per folder -->
+    <div class="section-title">Coverage by Module</div>
+    <div class="table-wrap" style="padding:20px">
+      <div class="progress-row">
+        <span class="progress-label">src/routes/</span>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:92%;background:var(--green)"></div></div>
+        <span class="progress-pct up">92%</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">src/middleware/</span>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:88%;background:var(--green)"></div></div>
+        <span class="progress-pct up">88%</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">src/services/</span>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:71%;background:var(--yellow)"></div></div>
+        <span class="progress-pct warn">71%</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">src/models/</span>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:65%;background:var(--yellow)"></div></div>
+        <span class="progress-pct warn">65%</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">src/utils/</span>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:48%;background:var(--red)"></div></div>
+        <span class="progress-pct down">48%</span>
+      </div>
+    </div>
+
+    <!-- Test suite results -->
+    <div class="section-title">Test Suites</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Suite</th><th>Tests</th><th>Passed</th><th>Failed</th><th>Duration</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-main">auth.test.js</td><td>24</td>
+            <td class="up">22</td><td class="down">2</td><td>8.4s</td>
+            <td><span class="pill fail"><span class="pill-dot"></span>FAIL</span></td>
+          </tr>
+          <tr>
+            <td class="td-main">user.routes.test.js</td><td>38</td>
+            <td class="up">38</td><td>0</td><td>12.1s</td>
+            <td><span class="pill pass"><span class="pill-dot"></span>PASS</span></td>
+          </tr>
+          <tr>
+            <td class="td-main">db.service.test.js</td><td>19</td>
+            <td class="up">19</td><td>0</td><td>5.8s</td>
+            <td><span class="pill pass"><span class="pill-dot"></span>PASS</span></td>
+          </tr>
+          <tr>
+            <td class="td-main">email.service.test.js</td><td>11</td>
+            <td class="up">11</td><td>0</td><td>3.2s</td>
+            <td><span class="pill pass"><span class="pill-dot"></span>PASS</span></td>
+          </tr>
+          <tr>
+            <td class="td-main">utils.test.js</td><td>44</td>
+            <td class="up">44</td><td>0</td><td>9.7s</td>
+            <td><span class="pill pass"><span class="pill-dot"></span>PASS</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Detailed error output for the 2 failing tests -->
+    <div class="section-title">Failed Tests</div>
+    <div class="info-card" style="margin-bottom:26px">
+      <div class="info-card-title">auth.test.js — 2 Failures</div>
+      <div class="log-block" style="margin-bottom:0">
+        <div><span class="log-err">✗ FAIL</span> should reject expired JWT token</div>
+        <div style="color:var(--muted);margin-left:16px">Expected: 401 Unauthorized</div>
+        <div style="color:var(--muted);margin-left:16px">Received: 200 OK  ← token expiry check missing</div>
+        <div style="margin-top:10px"><span class="log-err">✗ FAIL</span> should block requests without Authorization header</div>
+        <div style="color:var(--muted);margin-left:16px">TypeError: Cannot read properties of undefined (reading 'split')</div>
+        <div style="color:var(--muted);margin-left:24px">at verifyToken (src/middleware/auth.js:14:28)</div>
+      </div>
+    </div>
+
+  </div><!-- end #page-test -->
+
+
+  <!-- ══════════════════════════════
+       PAGE: SECURITY STAGE
+  ══════════════════════════════ -->
+  <div class="page" id="page-security">
+
+    <div class="page-header">
+      <div>
+        <div class="page-title">⛨ Security Stage</div>
+        <div class="page-subtitle">Dependency audit · SAST scan · Secret detection</div>
+      </div>
+      <span class="pill pass"><span class="pill-dot"></span>PASSED</span>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Critical</div>
+        <div class="stat-value up">0</div>
+        <div class="stat-change up">no critical issues</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">High</div>
+        <div class="stat-value up">0</div>
+        <div class="stat-change up">clear</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Medium</div>
+        <div class="stat-value warn">2</div>
+        <div class="stat-change warn">review advised</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Low</div>
+        <div class="stat-value">5</div>
+        <div class="stat-change">informational</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Secrets Found</div>
+        <div class="stat-value up">0</div>
+        <div class="stat-change up">no leaks</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+
+      <!-- Scan summary card -->
+      <div>
+        <div class="section-title">Scan Summary</div>
+        <div class="info-card">
+          <div class="kv-row"><span class="kv-key">Tool</span>             <span class="kv-val">npm audit + CodeQL</span></div>
+          <div class="kv-row"><span class="kv-key">Packages Scanned</span><span class="kv-val">312</span></div>
+          <div class="kv-row"><span class="kv-key">Files Scanned</span>   <span class="kv-val">47 .js files</span></div>
+          <div class="kv-row"><span class="kv-key">Secrets Scan</span>    <span class="kv-val up">Clean (truffleHog)</span></div>
+          <div class="kv-row"><span class="kv-key">SAST Result</span>     <span class="kv-val up">No code flaws</span></div>
+          <div class="kv-row"><span class="kv-key">Scan Duration</span>   <span class="kv-val">48s</span></div>
+        </div>
+      </div>
+
+      <!-- Vulnerability table -->
+      <div>
+        <div class="section-title">Vulnerabilities Found</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Package</th><th>Severity</th><th>CVE</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="td-main">lodash@4.17.20</td>
+                <td><span class="pill warn"><span class="pill-dot"></span>MEDIUM</span></td>
+                <td>CVE-2021-23337</td>
+              </tr>
+              <tr>
+                <td class="td-main">axios@0.21.1</td>
+                <td><span class="pill warn"><span class="pill-dot"></span>MEDIUM</span></td>
+                <td>CVE-2021-3749</td>
+              </tr>
+              <tr>
+                <td class="td-main">mime@1.6.0</td>
+                <td><span class="pill skip"><span class="pill-dot"></span>LOW</span></td>
+                <td>CVE-2022-21129</td>
+              </tr>
+              <tr>
+                <td class="td-main">qs@6.5.2</td>
+                <td><span class="pill skip"><span class="pill-dot"></span>LOW</span></td>
+                <td>CVE-2022-24999</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- end .two-col -->
+
+  </div><!-- end #page-security -->
+
+
+  <!-- ══════════════════════════════
+       PAGE: DEPLOY STAGE
+  ══════════════════════════════ -->
+  <div class="page" id="page-deploy">
+
+    <div class="page-header">
+      <div>
+        <div class="page-title">▲ Deploy Stage</div>
+        <div class="page-subtitle">Environment promotion · Health checks · Rollback</div>
+      </div>
+      <span class="pill pass"><span class="pill-dot"></span>DEPLOYED</span>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Environment</div>
+        <div class="stat-value" style="font-size:18px">Staging</div>
+        <div class="stat-change">production: pending</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Version</div>
+        <div class="stat-value" style="font-size:18px;font-family:var(--font-mono)">v1.4.2</div>
+        <div class="stat-change">from #142</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Deploy Time</div>
+        <div class="stat-value">52s</div>
+        <div class="stat-change up">faster than avg</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Health Check</div>
+        <div class="stat-value up">100%</div>
+        <div class="stat-change">all 3 pods OK</div>
+      </div>
+    </div>
+
+    <!-- Chronological timeline of this run's events -->
+    <div class="section-title">Deployment Timeline — Run #142</div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot pass"></div>
+        <div class="tl-title">Pipeline triggered</div>
+        <div class="tl-meta">14:32:01 · push to feature/auth by Rahul Sharma</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot pass"></div>
+        <div class="tl-title">Source checkout complete</div>
+        <div class="tl-meta">14:32:04 · Commit a3f9c12 checked out in 3.2s</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot run"></div>
+        <div class="tl-title">Build in progress</div>
+        <div class="tl-meta">14:33:01 · npm ci + webpack build running</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot warn"></div>
+        <div class="tl-title">Tests queued</div>
+        <div class="tl-meta">Waiting for build to complete before running 248 tests</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-title">Security scan</div>
+        <div class="tl-meta">Pending</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-title">Deploy to Staging</div>
+        <div class="tl-meta">Pending · Kubernetes rolling update</div>
+      </div>
+    </div>
+
+    <!-- Environments overview -->
+    <div class="section-title">Environments</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Environment</th><th>Current Version</th><th>Last Deploy</th><th>Health</th><th>URL</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-main">Development</td>
+            <td><span style="font-family:var(--font-mono)">v1.4.2-dev</span></td>
+            <td>5 min ago</td>
+            <td><span class="pill pass"><span class="pill-dot"></span>HEALTHY</span></td>
+            <td style="color:var(--accent)">dev.myapp.io</td>
+          </tr>
+          <tr>
+            <td class="td-main">Staging</td>
+            <td><span style="font-family:var(--font-mono)">v1.4.1</span></td>
+            <td>2 hours ago</td>
+            <td><span class="pill pass"><span class="pill-dot"></span>HEALTHY</span></td>
+            <td style="color:var(--accent)">staging.myapp.io</td>
+          </tr>
+          <tr>
+            <td class="td-main">Production</td>
+            <td><span style="font-family:var(--font-mono)">v1.4.0</span></td>
+            <td>3 days ago</td>
+            <td><span class="pill pass"><span class="pill-dot"></span>HEALTHY</span></td>
+            <td style="color:var(--accent)">myapp.io</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Rollback & pods info -->
+    <div class="two-col">
+      <div class="info-card">
+        <div class="info-card-title">Rollback Info</div>
+        <div class="kv-row"><span class="kv-key">Previous Version</span>  <span class="kv-val">v1.4.1</span></div>
+        <div class="kv-row"><span class="kv-key">Rollback Time Est.</span><span class="kv-val">~30 seconds</span></div>
+        <div class="kv-row"><span class="kv-key">Strategy</span>          <span class="kv-val">Rolling Update</span></div>
+        <div class="kv-row"><span class="kv-key">Rollback Trigger</span>  <span class="kv-val">Manual or auto (&gt;5% errors)</span></div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">Kubernetes Pods</div>
+        <div class="kv-row"><span class="kv-key">myapp-pod-1</span>   <span class="kv-val up">✓ Running</span></div>
+        <div class="kv-row"><span class="kv-key">myapp-pod-2</span>   <span class="kv-val up">✓ Running</span></div>
+        <div class="kv-row"><span class="kv-key">myapp-pod-3</span>   <span class="kv-val up">✓ Running</span></div>
+        <div class="kv-row"><span class="kv-key">Load Balancer</span> <span class="kv-val up">Active</span></div>
+      </div>
+    </div>
+
+  </div><!-- end #page-deploy -->
+
+
+</div><!-- end .main -->
+
+<!-- Our JavaScript — loaded at the bottom so HTML is ready first -->
+<script src="script.js"></script>
+
+</body>
+</html>
